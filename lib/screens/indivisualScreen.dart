@@ -10,14 +10,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:path_provider/path_provider.dart';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:chat_application/screens/displayUploadPicture.dart';
 
-//import 'package:flutter_image_compress/flutter_image_compress.dart';
-//import 'package:custom_multi_imagepicker_2/custom_multi_imagepicker_2.dart';
-//import 'package:multi_image_picker/multi_image_picker.dart';
-//import 'package:multiple_images_picker/multiple_images_picker.dart';
 
 Future<void> runCamera() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -41,6 +37,7 @@ Future<void> runCamera() async {
   );
 }
 
+
 class indivisual extends StatefulWidget {
   indivisual({
     Key? key,
@@ -54,47 +51,10 @@ class indivisual extends StatefulWidget {
 }
 
 class _indivisualState extends State<indivisual> {
-  //List<Asset> images = <Asset>[];
-  //String _error = 'No Error Dectected';
 
-  //File? image;
-  // XFile? compressedImage;
-  // originalImage;
-  //
-
-  // Future<String?> pickImage() async {
-  //   try {
-  //     final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-  //     if (image == null) return null;
-  //     final imageTemp = File(image.path);
-  //     setState(() => this.image = imageTemp);
-  //
-  //
-  //
-  //
-  //    // return imageTemp.path;
-  //     //originalImage = imageTemp.path;
-  //     if (imageTemp.path == null) return null;
-  //     final XFile? compressedFile = await FlutterImageCompress.compressAndGetFile(imageTemp.path, "$compressedImagePath/compress.jpg",quality: 10);
-  //     if (compressedFile != null) {
-  //       setState(() {
-  //         compressedImage = compressedFile;
-  //       });
-  //       print("SIZE");
-  //       print(imageTemp.path!.length);
-  //       print(compressedFile.length);
-  //     }
-  //     return compressedFile?.path;
-  //
-  //
-  //   } on PlatformException catch (e) {
-  //     print('Failed to pick image: $e');
-  //     return null;
-  //   }
-  // }
   List<XFile> selectedImages = [];
   String compressedImagePath = "/storage/emulated/0/Download";
-
+///image picker
   Future<List<XFile>> getImages() async {
     final pickedFile = await ImagePicker().pickMultiImage(imageQuality: 100, maxHeight: 640, maxWidth: 480);
     List<XFile> xfilePick = pickedFile;
@@ -111,8 +71,6 @@ class _indivisualState extends State<indivisual> {
         selectedImages.add(xFile );
         c = c + 1;
       }
-
-
       // selectedImages.add(File(xfilePick[i].path));
     }else {
       ScaffoldMessenger.of(context as BuildContext)
@@ -123,6 +81,39 @@ class _indivisualState extends State<indivisual> {
     return selectedImages;
   }
 
+  String path = "/storage/emulated/0/Download";
+  Future<List<PlatformFile>?> filePicker() async {
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'pdf', 'doc'],);
+    if (result != null) {
+      List<File> files = result.paths.map((path) => File(path!)).toList();
+     int len =files.length;
+      if (result != null) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(' $len FILE SELECTED '),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('SEND'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      print("No file selected");
+    }
+    return result?.files;
+  }
+
+
+// to create a image file
   Future<XFile> convertToXFile(Uint8List data, String fileName) async {
     // Get the temporary directory path
     final directory = await getTemporaryDirectory();
@@ -178,97 +169,6 @@ class _indivisualState extends State<indivisual> {
     }
 
 
-// Future<XFile?> compressImage(XFile imageFile, int quality,int c) async {
-//   // Read the file
-//   List<int> imageBytes = await imageFile.readAsBytes();
-//
-//   // Create an Image object from the bytes
-//   Image image = UnitImage.memory(imageBytes);
-//
-//   //Uint8List.fromList(myList);
-//   // Get the original dimensions of the image
-//   //int width = image.width;
-//   //int height = image.height;
-//
-//   // Create a new image with reduced quality
-//   Image compressedImage = image.copyWith(quality: quality);
-//
-//   // Encode the compressed image to bytes
-//   List<int> compressedBytes = await compressedImage.toByteData(format: ImageByteFormat.png)
-//       .then((ByteData? byteData) => byteData!.buffer.asUint8List());
-//
-//   // Write the compressed bytes to a new file
-//   File compressedFile = File('${imageFile.path}_compressed"$c".png');
-//   await compressedFile.writeAsBytes(compressedBytes);
-//
-//   // Print the original and compressed file sizes
-//   int originalSize = imageBytes.length;
-//   int compressedSize = compressedBytes.length;
-//   print('Original Size: $originalSize bytes');
-//   print('Compressed Size: $compressedSize bytes');
-//   return compressedFile!.path as XFile;
-// }
-
-// Future<void> comPress(File imageFile,int c) async{
-//   // Get the image file.
-//  // File imageFile = File('path/to/image.jpg');
-//
-//   // Get the image's width and height.
-//   ByteData imageData = (await imageFile.readAsBytes()) as ByteData;
-//   Image image = Image.memory(imageData as Uint8List ,filterQuality: FilterQuality.low);
-//
-//   //Image image = Image.decodeImage(imageFile.readAsBytes()) ;
-//   //Image compressedImage = Image(width: image.width, height: image.height,);
-//   //compressedImage.quality = 50;
-//
-//   setState(()async {
-//     File compressedImageFile = File('/storage/emulated/0/Download/compress"$c".jpg');
-//       await compressedImageFile.writeAsBytes(imageData as List<int>);
-//   });
-//
-//   // Create a new Image object with the same width and height as the original image.
-//
-// }
-
-// Future<void> compressImage(File imageFile,int c) async {
-//   // Get the image file.
-//   //File imageFile = File('path/to/image.jpg');
-//
-//   // Read the image file as a byte array.
-//   ByteData imageData = (await imageFile.readAsBytes()) as ByteData;
-//  // ByteData imageData = await imageFile.readAsBytes();
-//   // Create a new Image object with the same width and height as the original image.
-//   //Image image = Image.memory(imageData as Uint8List,filterQuality: FilterQuality.medium);
-//
-//   // Set the quality of the compressed image.
-//   //image.quality = 50;
-//   File compressedImageFile = File('/storage/emulated/0/Download/image"$c".jpg');
-//   compressedImageFile.writeAsBytes(imageData as Uint8List);
-//   // Save the compressed image to a new file.
-//
-//   //await image.save('path/to/compressed/image"$c".jpg');
-// }
-
-// Future<Uint8List?> compressImage(File imageFile, int quality) async {
-//   // Read the image file as bytes
-//   final bytes = await imageFile.readAsBytes();
-//
-//   // Decode the image bytes into an Image object
-//   final image = await decodeImageFromList(bytes);
-//
-//   // Get the width and height of the image
-//   final width = image.width;
-//   final height = image.height;
-//
-//   // Create a new Image object with reduced size
-//   final resizedImage = await image.toByteData(
-//     format: ui.ImageByteFormat.png,
-//
-//   );
-//   // Retrieve the compressed image bytes
-//   final compressedBytes = resizedImage?.buffer.asUint8List();
-//   return compressedBytes;
-// }
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +292,7 @@ class _indivisualState extends State<indivisual> {
               ),
               PopupMenuItem(
                 onTap: () {
-                  popUp();
+                  //popUp();
                 },
                 value: "MORE",
                 child: Row(
@@ -510,16 +410,16 @@ class _indivisualState extends State<indivisual> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     iconcreation(
-                        Icons.insert_drive_file, Colors.indigo, "Document"),
+                        Icons.insert_drive_file, Colors.indigo, "Document","files"),
                     SizedBox(
                       width: 40,
                     ),
-                    iconcreation(Icons.camera_alt, Colors.pink, "Camera"),
+                    iconcreation(Icons.camera_alt, Colors.pink, "Camera","camera"),
                     SizedBox(
                       width: 40,
                     ),
                     iconcreation(
-                        Icons.insert_photo, Colors.purpleAccent, "Gallary"),
+                        Icons.insert_photo, Colors.purpleAccent, "Gallary","gallery"),
                   ],
                 ),
                 SizedBox(
@@ -528,16 +428,16 @@ class _indivisualState extends State<indivisual> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    iconcreation(Icons.audiotrack_sharp, Colors.blue, "AUDIO"),
+                    iconcreation(Icons.audiotrack_sharp, Colors.blue, "AUDIO","audio"),
                     SizedBox(
                       width: 40,
                     ),
-                    iconcreation(Icons.contacts, Colors.blueAccent, "Contacts"),
+                    iconcreation(Icons.contacts, Colors.blueAccent, "Contacts","contacts"),
                     SizedBox(
                       width: 40,
                     ),
                     iconcreation(Icons.location_on_rounded, Colors.redAccent,
-                        "Location"),
+                        "Location","location"),
                   ],
                 ),
               ],
@@ -546,23 +446,46 @@ class _indivisualState extends State<indivisual> {
         ));
   }
 
-  Widget iconcreation(IconData icon, Color color, String text) {
+  Widget iconcreation(IconData icon, Color color, String text,String text1) {
+
     return InkWell(
       onTap: () async {
         Navigator.pop(context);
-
-        List<XFile> imagePath = await getImages();
-        if (imagePath != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => DisplayPicture(
-                // Pass the automatically generated path to
-                // the DisplayPictureScreen widget.
-                imagePath: imagePath,
+        if(text1 == "gallery") {
+          List<XFile> imagePath = await getImages();
+          if (imagePath != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                    DisplayPicture(
+                      // Pass the automatically generated path to
+                      // the DisplayPictureScreen widget.
+                      imagePath: imagePath,
+                    ),
               ),
-            ),
+            );
+          }
+        }else if(text1 == "contacts"){
+          print("contacts");
+        }
+        else if(text1 == "audio"){
+          print("Audio");
+        }
+
+        else if(text1 == "files") {
+          List<PlatformFile>? imagePath = await filePicker();
+          //int? len = imagePath?.length;
+          AlertDialog(
+              title: Text('AlertDialog $imagePath?.length Title'),
           );
         }
+        else if(text1 == "camera"){
+          print("camera");
+        }
+        else{
+          print("location");
+        }
+
       },
       child: Column(
         children: [
@@ -586,93 +509,5 @@ class _indivisualState extends State<indivisual> {
     );
   }
 
-  void popUp() {
-    PopupMenuButton<String>(
-        // Callback that sets the selected popup menu item.
-        onSelected: (value) {
-      print(value);
-    }, itemBuilder: (BuildContext context) {
-      return [
-        PopupMenuItem(
-          value: "video_call",
-          child: Row(
-            children: [
-              Icon(
-                Icons.videocam,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('VIDEO CALL'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "delete_chat",
-          child: Row(
-            children: [
-              Icon(
-                Icons.delete,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('DELETE CHAT'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "block",
-          child: Row(
-            children: [
-              Icon(
-                Icons.block,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('BLOCK USER'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "mute",
-          child: Row(
-            children: [
-              Icon(
-                Icons.volume_mute_outlined,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('MUTE NOTIFICATION'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: "SEARCH",
-          child: Row(
-            children: [
-              Icon(
-                Icons.search,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('SEARCH'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          onTap: () {},
-          value: "MORE",
-          child: Row(
-            children: [
-              Icon(
-                Icons.more_horiz_sharp,
-                color: Colors.black,
-              ),
-              SizedBox(width: 10),
-              Text('MORE'),
-            ],
-          ),
-        ),
-      ];
-    });
-  }
+
 }
