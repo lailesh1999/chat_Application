@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'package:chat_application/model/chatModel.dart';
+import 'package:chat_application/screens/fileDisplay.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:chat_application/permission/CapturePicture.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:chat_application/screens/displayUploadPicture.dart';
+import 'package:path/path.dart' as path;
 
 
 Future<void> runCamera() async {
@@ -52,9 +55,126 @@ class indivisual extends StatefulWidget {
 
 class _indivisualState extends State<indivisual> {
 
+  String path = "/storage/emulated/0/Download";
+  //String paths = "/storage/emulated/0/Download";
+
+
+
+
+  Future<List<PlatformFile>?>  getAudio()async{
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple:true,
+     //type: FileType.custom,
+      //allowedExtensions: ['mp3'],
+    );
+  if(result != null){
+    List<File?> files = result.paths.map((path) => File(path!)).toList();
+    for(int i=0;i<files.length;i++){
+      final compressedFile = await compressAudio(files[i]!);
+    }
+  }
+
+
+    return result?.files;
+
+  }
+  String audioPath = "/storage/emulated/0/Download/chatApplication";
+  Future<File?> compressAudio(File audioFile) async {
+    try {
+      DateTime current_date = DateTime.now();
+
+
+      final outputPath = '${audioPath}/$current_date.mp3';
+      final arguments = ['-i', audioFile.path, '-codec:a', 'libmp3lame', outputPath];
+
+      await Process.run('ffmpeg', arguments);
+
+      final compressedFile = File(outputPath);
+      return compressedFile;
+    } catch (e) {
+      print('Audio compression error: $e');
+      return null;
+    }
+  }
+
+
+
+  Future<List<PlatformFile>?> filePicker() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'pdf', 'doc'],
+     );
+    if (result != null) {
+      List<File> files = result.paths.map((path) => File(path!)).toList();
+
+        for(int i=0;i<files.length;i++){
+          copyFile(files[i].path,'/storage/emulated/0/Download/chatApplication');
+        }
+          //final dd = files[0].path;
+          //String fileExtension = dd.split(".").last;
+     int len =files.length;
+      if (result != null && len > 1) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(' $len FILES SELECTED '),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('SEND'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      print("No file selected");
+    }
+    return result?.files;
+  }
+
+//copy file from one destination to another
+  void copyFile(String sourcePath, String destinationDirectory) {
+    final File sourceFile = File(sourcePath);
+
+    // Check if the source file exists
+    if (!sourceFile.existsSync()) {
+      print('Source file does not exist.');
+      return;
+    }
+
+    // Extract the file name from the source path
+    final String fileName = sourceFile.path.split('/').last;
+
+    // Construct the destination path by combining the destination directory and the file name
+    final String destinationPath = '$destinationDirectory/$fileName';
+
+    // Check if the destination file already exists
+    final File destinationFile = File(destinationPath);
+    if (destinationFile.existsSync()) {
+      print('Destination file already exists.');
+      return;
+    }
+
+    try {
+      // Read the content of the source file
+      final List<int> content = sourceFile.readAsBytesSync();
+
+      // Write the content to the destination file
+      destinationFile.writeAsBytesSync(content);
+
+      print('File copied successfully.');
+    } catch (e) {
+      print('An error occurred while copying the file: $e');
+    }
+  }
   List<XFile> selectedImages = [];
   String compressedImagePath = "/storage/emulated/0/Download";
-///image picker
+  ///image picker
   Future<List<XFile>> getImages() async {
     final pickedFile = await ImagePicker().pickMultiImage(imageQuality: 100, maxHeight: 640, maxWidth: 480);
     List<XFile> xfilePick = pickedFile;
@@ -73,63 +193,14 @@ class _indivisualState extends State<indivisual> {
       }
       // selectedImages.add(File(xfilePick[i].path));
     }else {
-      ScaffoldMessenger.of(context as BuildContext)
-          .showSnackBar(const SnackBar(content: Text('Nothing is selected')));
+      ScaffoldMessenger.of(context as BuildContext).showSnackBar(const SnackBar(content: Text('Nothing is selected')));
       Navigator.pop(context as BuildContext);
     }
 
     return selectedImages;
   }
 
-  String path = "/storage/emulated/0/Download";
-  Future<List<PlatformFile>?> filePicker() async {
-
-    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true,
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'pdf', 'doc'],);
-    if (result != null) {
-      List<File> files = result.paths.map((path) => File(path!)).toList();
-     int len =files.length;
-      if (result != null) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(' $len FILE SELECTED '),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('SEND'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } else {
-      print("No file selected");
-    }
-    return result?.files;
-  }
-
-
-// to create a image file
-  Future<XFile> convertToXFile(Uint8List data, String fileName) async {
-    // Get the temporary directory path
-    final directory = await getTemporaryDirectory();
-    final filePath = '${compressedImagePath}/$fileName';
-
-    // Create a new file with the Uint8List data
-    final file = File(filePath);
-    await file.writeAsBytes(data);
-
-    // Return the XFile instance
-    return XFile(filePath);
-  }
-
-
-
-    Future<Uint8List> compressImage(XFile imageFile, int quality) async {
+  Future<Uint8List> compressImage(XFile imageFile, int quality) async {
       // Read the image file as bytes
       final bytes = await imageFile.readAsBytes();
 
@@ -169,6 +240,19 @@ class _indivisualState extends State<indivisual> {
     }
 
 
+// to create a image file
+  Future<XFile> convertToXFile(Uint8List data, String fileName) async {
+    // Get the temporary directory path
+    final directory = await getTemporaryDirectory();
+    final filePath = '${compressedImagePath}/$fileName';
+
+    // Create a new file with the Uint8List data
+    final file = File(filePath);
+    await file.writeAsBytes(data);
+
+    // Return the XFile instance
+    return XFile(filePath);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +315,7 @@ class _indivisualState extends State<indivisual> {
                   children: [
                     Icon(
                       Icons.videocam,
-                      color: Colors.black,
+                      color: Colors.blue,
                     ),
                     SizedBox(width: 10),
                     Text('VIDEO CALL'),
@@ -368,9 +452,9 @@ class _indivisualState extends State<indivisual> {
                             // icon: Icon(Icons.emoji_emotions_rounded),
                           ),
                         )),
-                    decoration: new BoxDecoration(
+                    decoration: const BoxDecoration(
                       boxShadow: [
-                        new BoxShadow(
+                        BoxShadow(
                           color: Colors.grey,
                           blurRadius: 10.0,
                         ),
@@ -469,15 +553,34 @@ class _indivisualState extends State<indivisual> {
           print("contacts");
         }
         else if(text1 == "audio"){
-          print("Audio");
+          getAudio();
+
         }
 
         else if(text1 == "files") {
-          List<PlatformFile>? imagePath = await filePicker();
+          List<File>? filePath = (await filePicker())?.cast<File>();
           //int? len = imagePath?.length;
-          AlertDialog(
-              title: Text('AlertDialog $imagePath?.length Title'),
-          );
+          if(filePath?.length != 1){
+            AlertDialog(
+              title: Text('AlertDialog $filePath?.length Title'),
+            );
+          }
+          else{
+            if(filePath !=  null){
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      displayFile(
+                        // Pass the automatically generated path to
+                        // the DisplayPictureScreen widget.
+                        filePath: filePath ,
+                      ),
+                ),
+              );
+            }
+          }
+
+
         }
         else if(text1 == "camera"){
           print("camera");

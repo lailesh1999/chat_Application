@@ -42,7 +42,6 @@ dependencies:
   flutter_profile_picture: ^2.0.0
   fading_image_button: ^0.10.0+0
   sqflite: ^2.2.8+1
-  http: ^0.13.6
   fast_contacts: ^3.0.3
   permission_handler: ^10.2.0
   contacts_service: ^0.6.3
@@ -55,6 +54,8 @@ dependencies:
   multi_image_picker: ^4.8.01
   multiple_images_picker: ^1.0.1
   file_picker: ^5.2.10
+  http: ^0.13.6
+  mime: ^1.0.4
 
 dev_dependencies:
   flutter_test:
