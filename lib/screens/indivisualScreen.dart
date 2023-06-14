@@ -1,8 +1,8 @@
-import 'dart:math';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'package:chat_application/model/chatModel.dart';
 import 'package:chat_application/screens/fileDisplay.dart';
+import 'package:chat_application/screens/testExample.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:chat_application/permission/CapturePicture.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +15,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:chat_application/screens/displayUploadPicture.dart';
-import 'package:path/path.dart' as path;
-
+import 'package:chat_application/screens/ZoomVoiceMessage.dart';
+import 'package:chat_application/screens/ImageVideoPicker.dart';
 
 Future<void> runCamera() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -40,7 +40,6 @@ Future<void> runCamera() async {
   );
 }
 
-
 class indivisual extends StatefulWidget {
   indivisual({
     Key? key,
@@ -53,68 +52,95 @@ class indivisual extends StatefulWidget {
   State<indivisual> createState() => _indivisualState();
 }
 
-class _indivisualState extends State<indivisual> {
-
+class _indivisualState extends State<indivisual>
+    with SingleTickerProviderStateMixin {
+  //late FlutterSoundRecorder _recordingSession;
+  Imagepicker im = new Imagepicker();
   String path = "/storage/emulated/0/Download";
   //String paths = "/storage/emulated/0/Download";
 
-
-
-
-  Future<List<PlatformFile>?>  getAudio()async{
-
+  //String audioPath = "/storage/emulated/0/Download/chatApplication";
+  Directory directory =
+      Directory("/storage/emulated/0/Download/chatApplication");
+  int maxFileSize = 1 * 1024 * 1024; // 5MB limit
+  Future<List<String>> getAudio() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.audio,
-      allowMultiple:true,
-     //type: FileType.custom,
+      allowMultiple: true,
+      //type: FileType.custom,
       //allowedExtensions: ['mp3'],
     );
-  if(result != null){
-    List<File?> files = result.paths.map((path) => File(path!)).toList();
-    for(int i=0;i<files.length;i++){
-      final compressedFile = await compressAudio(files[i]!);
+    if (result != null && result.files.isNotEmpty) {
+      PlatformFile file = result.files.first;
+      int fileSize = file.size ?? 0;
+      List<String> selectedFiles = [];
+      List<String> invalidFiles = [];
+      int c = 0;
+      for (var file in result.files) {
+        c++;
+        if (fileSize < maxFileSize || file.size < maxFileSize) {
+          selectedFiles.add(file.path as String);
+        } else {
+          invalidFiles.add(file.path as String);
+        }
+      }
+      if (c == 0) {
+        if (fileSize > maxFileSize) {
+          AlertBox(context);
+        }
+      }
+      if (invalidFiles.isNotEmpty) {
+        AlertBox(context);
+      }
+      for (int i = 0; i < selectedFiles.length; i++) {
+        //File audioPath = File(files[i]!.path);
+        copyFile(
+            selectedFiles[i], '/storage/emulated/0/Download/chatApplication');
+      }
+      return selectedFiles;
+    } else {
+      return [];
     }
+
+    //List<File?> files = result.paths.map((path) => File(path!)).toList();
   }
 
-
-    return result?.files;
-
+  Future AlertBox(
+    BuildContext context,
+  ) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('File Size Exceeded'),
+          content: Text(
+              'The selected audio file exceeds the file size limit. MIN SIZE 900KB'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
   }
-  String audioPath = "/storage/emulated/0/Download/chatApplication";
-  Future<File?> compressAudio(File audioFile) async {
-    try {
-      DateTime current_date = DateTime.now();
-
-
-      final outputPath = '${audioPath}/$current_date.mp3';
-      final arguments = ['-i', audioFile.path, '-codec:a', 'libmp3lame', outputPath];
-
-      await Process.run('ffmpeg', arguments);
-
-      final compressedFile = File(outputPath);
-      return compressedFile;
-    } catch (e) {
-      print('Audio compression error: $e');
-      return null;
-    }
-  }
-
-
 
   Future<List<PlatformFile>?> filePicker() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true,
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: ['jpg', 'pdf', 'doc'],
-     );
+    );
     if (result != null) {
       List<File> files = result.paths.map((path) => File(path!)).toList();
 
-        for(int i=0;i<files.length;i++){
-          copyFile(files[i].path,'/storage/emulated/0/Download/chatApplication');
-        }
-          //final dd = files[0].path;
-          //String fileExtension = dd.split(".").last;
-     int len =files.length;
+      for (int i = 0; i < files.length; i++) {
+        copyFile(files[i].path, '/storage/emulated/0/Download/chatApplication');
+      }
+      //final dd = files[0].path;
+      //String fileExtension = dd.split(".").last;
+      int len = files.length;
       if (result != null && len > 1) {
         showDialog(
           context: context,
@@ -172,87 +198,8 @@ class _indivisualState extends State<indivisual> {
       print('An error occurred while copying the file: $e');
     }
   }
-  List<XFile> selectedImages = [];
-  String compressedImagePath = "/storage/emulated/0/Download";
-  ///image picker
-  Future<List<XFile>> getImages() async {
-    final pickedFile = await ImagePicker().pickMultiImage(imageQuality: 100, maxHeight: 640, maxWidth: 480);
-    List<XFile> xfilePick = pickedFile;
 
-    int c = 0;
-    if (xfilePick.isNotEmpty) {
-      for (var i = 0; i < xfilePick.length; i++) {
-        //final XFile? compressedFile = await FlutterImageCompress.compressAndGetFile(xfilePick[i].path, "$compressedImagePath/compress+$c"".jpg",quality: 1);
-
-        Future<Uint8List> compressedData =  compressImage(xfilePick[i], 70) ;
-        Uint8List data = await compressedData;
-        String fileName = 'compressed_image$c.png';
-        XFile xFile = await convertToXFile(data, fileName);
-        selectedImages.add(xFile );
-        c = c + 1;
-      }
-      // selectedImages.add(File(xfilePick[i].path));
-    }else {
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(const SnackBar(content: Text('Nothing is selected')));
-      Navigator.pop(context as BuildContext);
-    }
-
-    return selectedImages;
-  }
-
-  Future<Uint8List> compressImage(XFile imageFile, int quality) async {
-      // Read the image file as bytes
-      final bytes = await imageFile.readAsBytes();
-
-      // Decode the image bytes into an Image object
-      final image = await decodeImageFromList(bytes);
-
-      // Get the width and height of the image
-      final width = image.width;
-      final height = image.height;
-
-      // Calculate the target size based on the desired quality
-      final targetSize = (bytes.length * (quality / 100)).round();
-
-      // If the target size is smaller than the current size, perform compression
-      if (targetSize < bytes.length) {
-        // Calculate the compression ratio
-        final compressionRatio = bytes.length / targetSize;
-
-        // Calculate the new dimensions based on the compression ratio
-        final newWidth = (width / compressionRatio).round();
-        final newHeight = (height / compressionRatio).round();
-
-        // Resize the image
-        final resizedImage = await image.toByteData(
-          format: ui.ImageByteFormat.png,
-          //width: newWidth,
-          //height: newHeight,
-        );
-
-        // Convert the resized image to Uint8List
-        final Uint8List compressedData = resizedImage!.buffer.asUint8List();
-        return compressedData;
-      } else {
-        // Return the original image data if no compression is needed
-        return bytes;
-      }
-    }
-
-
-// to create a image file
-  Future<XFile> convertToXFile(Uint8List data, String fileName) async {
-    // Get the temporary directory path
-    final directory = await getTemporaryDirectory();
-    final filePath = '${compressedImagePath}/$fileName';
-
-    // Create a new file with the Uint8List data
-    final file = File(filePath);
-    await file.writeAsBytes(data);
-
-    // Return the XFile instance
-    return XFile(filePath);
-  }
+  bool isTextEntered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -297,6 +244,14 @@ class _indivisualState extends State<indivisual> {
                   "last seen at " + widget.chatModel.time,
                   style: TextStyle(fontSize: 15, color: Colors.white60),
                 ),
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ZoomButton()));
+                    },
+                    child: Text("NEXT"))
               ],
             ),
           ),
@@ -411,47 +366,51 @@ class _indivisualState extends State<indivisual> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(13)),
                         child: TextFormField(
-                          textAlignVertical: TextAlignVertical.center,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: 5,
-                          minLines: 1,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            prefixIcon: IconButton(
-                              icon:
-                                  Icon(Icons.emoji_emotions_rounded, size: 25),
-                              onPressed: () {},
-                            ),
-                            suffixIcon: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.attach_file_sharp,
-                                    size: 25,
+                            textAlignVertical: TextAlignVertical.center,
+                            keyboardType: TextInputType.multiline,
+                            maxLines: 5,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              prefixIcon: IconButton(
+                                icon: Icon(Icons.emoji_emotions_rounded,
+                                    size: 25),
+                                onPressed: () {},
+                              ),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.attach_file_sharp,
+                                      size: 25,
+                                    ),
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                          backgroundColor: Colors.transparent,
+                                          context: context,
+                                          builder: (builder) => bottomsheet());
+                                    },
                                   ),
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                        backgroundColor: Colors.transparent,
-                                        context: context,
-                                        builder: (builder) => bottomsheet());
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.camera_alt_sharp,
-                                    size: 25,
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.camera_alt_sharp,
+                                      size: 25,
+                                    ),
+                                    onPressed: () {
+                                      runCamera();
+                                    },
                                   ),
-                                  onPressed: () {
-                                    runCamera();
-                                  },
-                                ),
-                              ],
+                                ],
+                              ),
+                              hintText: 'Type your message',
+                              // icon: Icon(Icons.emoji_emotions_rounded),
                             ),
-                            hintText: 'Type your message',
-                            // icon: Icon(Icons.emoji_emotions_rounded),
-                          ),
-                        )),
+                            onChanged: (value) {
+                              setState(() {
+                                isTextEntered = value.isNotEmpty;
+                              });
+                            })),
                     decoration: const BoxDecoration(
                       boxShadow: [
                         BoxShadow(
@@ -461,12 +420,7 @@ class _indivisualState extends State<indivisual> {
                       ],
                     ),
                   ),
-                  CircleAvatar(
-                    child: IconButton(
-                      icon: Icon(Icons.send_sharp),
-                      onPressed: () {},
-                    ),
-                  ),
+                  (isTextEntered) ? button1() : ZoomButton(),
                 ],
               ),
             )
@@ -474,6 +428,17 @@ class _indivisualState extends State<indivisual> {
         ),
       ),
     );
+  }
+
+  Widget button1() {
+    return (CircleAvatar(
+      child: IconButton(
+        icon: Icon(Icons.send),
+        onPressed: () {
+          setState(() {});
+        },
+      ),
+    ));
   }
 
   Widget bottomsheet() {
@@ -493,17 +458,18 @@ class _indivisualState extends State<indivisual> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    iconcreation(
-                        Icons.insert_drive_file, Colors.indigo, "Document","files"),
-                    SizedBox(
-                      width: 40,
-                    ),
-                    iconcreation(Icons.camera_alt, Colors.pink, "Camera","camera"),
+                    iconcreation(Icons.insert_drive_file, Colors.indigo,
+                        "Document", "files"),
                     SizedBox(
                       width: 40,
                     ),
                     iconcreation(
-                        Icons.insert_photo, Colors.purpleAccent, "Gallary","gallery"),
+                        Icons.camera_alt, Colors.pink, "Camera", "camera"),
+                    SizedBox(
+                      width: 40,
+                    ),
+                    iconcreation(Icons.insert_photo, Colors.purpleAccent,
+                        "Gallary", "gallery"),
                   ],
                 ),
                 SizedBox(
@@ -512,16 +478,18 @@ class _indivisualState extends State<indivisual> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    iconcreation(Icons.audiotrack_sharp, Colors.blue, "AUDIO","audio"),
+                    iconcreation(
+                        Icons.audiotrack_sharp, Colors.blue, "AUDIO", "audio"),
                     SizedBox(
                       width: 40,
                     ),
-                    iconcreation(Icons.contacts, Colors.blueAccent, "Contacts","contacts"),
+                    iconcreation(Icons.contacts, Colors.blueAccent, "Contacts",
+                        "contacts"),
                     SizedBox(
                       width: 40,
                     ),
                     iconcreation(Icons.location_on_rounded, Colors.redAccent,
-                        "Location","location"),
+                        "Location", "location"),
                   ],
                 ),
               ],
@@ -530,65 +498,52 @@ class _indivisualState extends State<indivisual> {
         ));
   }
 
-  Widget iconcreation(IconData icon, Color color, String text,String text1) {
-
+  Widget iconcreation(IconData icon, Color color, String text, String text1) {
     return InkWell(
       onTap: () async {
         Navigator.pop(context);
-        if(text1 == "gallery") {
-          List<XFile> imagePath = await getImages();
+        if (text1 == "gallery") {
+          List<XFile>? imagePath = (await im.videoPicker());
           if (imagePath != null) {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) =>
-                    DisplayPicture(
-                      // Pass the automatically generated path to
-                      // the DisplayPictureScreen widget.
-                      imagePath: imagePath,
-                    ),
+                builder: (context) => DisplayPicture(
+                  // Pass the automatically generated path to
+                  // the DisplayPictureScreen widget.
+                  imagePath: imagePath,
+                ),
               ),
             );
           }
-        }else if(text1 == "contacts"){
+        } else if (text1 == "contacts") {
           print("contacts");
-        }
-        else if(text1 == "audio"){
+        } else if (text1 == "audio") {
           getAudio();
-
-        }
-
-        else if(text1 == "files") {
+        } else if (text1 == "files") {
           List<File>? filePath = (await filePicker())?.cast<File>();
           //int? len = imagePath?.length;
-          if(filePath?.length != 1){
+          if (filePath?.length != 1) {
             AlertDialog(
               title: Text('AlertDialog $filePath?.length Title'),
             );
-          }
-          else{
-            if(filePath !=  null){
+          } else {
+            if (filePath != null) {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) =>
-                      displayFile(
-                        // Pass the automatically generated path to
-                        // the DisplayPictureScreen widget.
-                        filePath: filePath ,
-                      ),
+                  builder: (context) => displayFile(
+                    // Pass the automatically generated path to
+                    // the DisplayPictureScreen widget.
+                    filePath: filePath,
+                  ),
                 ),
               );
             }
           }
-
-
-        }
-        else if(text1 == "camera"){
+        } else if (text1 == "camera") {
           print("camera");
-        }
-        else{
+        } else {
           print("location");
         }
-
       },
       child: Column(
         children: [
@@ -611,6 +566,4 @@ class _indivisualState extends State<indivisual> {
       ),
     );
   }
-
-
 }

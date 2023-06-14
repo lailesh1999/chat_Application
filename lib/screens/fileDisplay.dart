@@ -12,6 +12,9 @@ class displayFile extends StatefulWidget {
 }
 
 class _displayFileState extends State<displayFile> {
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,9 +47,6 @@ class _displayFileState extends State<displayFile> {
                 fit: BoxFit.cover,
               ),
             ),
-
-
-
             Positioned(
               bottom: 0,
               child: Container(
