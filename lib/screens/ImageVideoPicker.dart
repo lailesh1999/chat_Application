@@ -135,7 +135,7 @@ class Imagepicker {
 
   Future<void> compressVideo(String videoPath) async {
     // Set the video quality.
-    VideoQuality quality = VideoQuality.MediumQuality;
+    VideoQuality quality = VideoQuality.Res640x480Quality;
 
     // Compress the video.
     MediaInfo? info = await VideoCompress.compressVideo(
@@ -153,8 +153,12 @@ class Imagepicker {
     }
     // Write the compressed video to the directory.
     //await info!.writeAsBytesSync(directory);
-    File compressedVideoFile = File('${directory.path}/${info?.file}');
-    compressedVideoFile.writeAsBytesSync(info?.path as List<int>);
+    // var filename = "compresss";
+    // var filesname;
+    DateTime current_date = DateTime.now();
+    File compressedVideoFile = File('${directory.path}/$current_date.mp4');
+    List<int> videoBytes = await File(info?.path ?? '').readAsBytes();
+    compressedVideoFile.writeAsBytesSync(videoBytes);
   }
 
 

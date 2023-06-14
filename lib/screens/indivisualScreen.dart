@@ -185,7 +185,6 @@ class _indivisualState extends State<indivisual>
       print('Destination file already exists.');
       return;
     }
-
     try {
       // Read the content of the source file
       final List<int> content = sourceFile.readAsBytesSync();
