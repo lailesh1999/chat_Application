@@ -5,14 +5,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
+import 'package:image_compression_flutter/flutter_image_compress.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:video_compress/video_compress.dart';
+import 'package:image_compression_flutter/image_compression_flutter.dart';
+
 class Imagepicker {
   List<XFile> selectedImages = [];
   String compressedImagePath = "/storage/emulated/0/Download/ChatApplication";
@@ -84,7 +86,7 @@ class Imagepicker {
 // to create a image file
   Future<XFile> convertToXFile(Uint8List data, String fileName) async {
     // Get the temporary directory path
-    final directory = await getTemporaryDirectory();
+    //final directory = await getTemporaryDirectory();
     final filePath = '${compressedImagePath}/$fileName';
 
     // Create a new file with the Uint8List data
@@ -109,10 +111,11 @@ class Imagepicker {
       int c=0;
       for (int i = 0; i < files.length; i++) {
         final ex = files[i].path;
-        String fileExtension = ex.split(".").last;
+        String fileExtension = ex.split(".").last.toLowerCase();
         //copyFile(files[i].path, '/storage/emulated/0/Download/chatApplication');
-        if(fileExtension == "jpg" || fileExtension == "png"){
-          Future<Uint8List?> compressedData = compressImage(files[i], 20);
+        if(fileExtension == "jpg" || fileExtension == "png" ){
+
+          Future<Uint8List?> compressedData = compressImage(files[i]) ;
           Uint8List? data = await compressedData;
           String fileName = 'compressed_image$c.png';
           XFile xFile = await convertToXFile(data!, fileName);
@@ -120,7 +123,8 @@ class Imagepicker {
           c = c + 1;
         }
         else{
-              print(compressVideo(files[i].path));
+              c=c+1;
+              compressVideo(files[i].path,c);
         }
       }
       //final dd = files[0].path;
@@ -133,9 +137,9 @@ class Imagepicker {
     return selectedImages;
   }
 
-  Future<void> compressVideo(String videoPath) async {
+  Future<void> compressVideo(String videoPath,int c) async {
     // Set the video quality.
-    VideoQuality quality = VideoQuality.Res640x480Quality;
+    VideoQuality quality = VideoQuality.LowQuality;
 
     // Compress the video.
     MediaInfo? info = await VideoCompress.compressVideo(
@@ -144,6 +148,7 @@ class Imagepicker {
       deleteOrigin: false,
       includeAudio: true,
     );
+
 
     // Print the path of the compressed video.
     print(info?.path);
@@ -156,7 +161,8 @@ class Imagepicker {
     // var filename = "compresss";
     // var filesname;
     DateTime current_date = DateTime.now();
-    File compressedVideoFile = File('${directory.path}/$current_date.mp4');
+    int currentSeconds = current_date.second;
+    File compressedVideoFile = File('${directory.path}/compress$currentSeconds.mp4');
     List<int> videoBytes = await File(info?.path ?? '').readAsBytes();
     compressedVideoFile.writeAsBytesSync(videoBytes);
   }
@@ -200,13 +206,41 @@ class Imagepicker {
   }
 
 
-  Future<Uint8List?> compressImage(File imageFile, int quality) async {
-    final compressedFile = await FlutterImageCompress.compressWithFile(
-      imageFile.path,
-      quality: quality,
-    );
+  // Future<Uint8List?> compressImage(File imageFile, int quality) async {
+  //   final compressedFile = await FlutterImageCompress.compressWithFile(
+  //     imageFile.path,
+  //     quality: quality,
+  //   );
+  //
+  //   return compressedFile;
+  // }
 
-    return compressedFile;
+   // Future<Uint8List?> compressImage(ImageFile imageFile,int quality) async{
+   //   Configuration config = Configuration(
+   //     outputType: ImageOutputType.webpThenJpg,
+   //     // can only be true for Android and iOS while using ImageOutputType.jpg or ImageOutputType.pngÏ
+   //     useJpgPngNativeCompressor: false,
+   //     // set quality between 0-100
+   //     quality: 40,
+   //   );
+   //   final param = ImageFileConfiguration(input: imageFile, config: config);
+   //   final output = await compressor.compress(param);
+   //   Uint8List dd= await  imageFileToUint8List(output as File) as Uint8List;
+   //  return dd;
+   // }
+
+  Future<Uint8List?> compressImage(File file) async {
+    var result = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+
+      quality: 20,
+     // rotate: 90,
+    );
+    print('Original image size: ${file.lengthSync()}');
+    print('Compressed image size: ${result?.length}');
+    return result;
   }
+
+
 
 }

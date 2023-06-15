@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   connectivity_plus_windows
+  image_compression_flutter
   permission_handler_windows
 )
 
