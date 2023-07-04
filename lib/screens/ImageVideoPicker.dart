@@ -106,7 +106,7 @@ class Imagepicker {
       allowedExtensions: ['jpg', 'png','mp4', 'mov', 'avi'],
     );
     if (result != null) {
-     // List<XFile> files = result.paths.map((path) => File(path!)).cast<XFile>().toList();
+      // List<XFile> files = result.paths.map((path) => File(path!)).cast<XFile>().toList();
       List<File> files = result.paths.map((path) => File(path!)).toList();
       int c=0;
       for (int i = 0; i < files.length; i++) {
@@ -123,8 +123,8 @@ class Imagepicker {
           c = c + 1;
         }
         else{
-              c=c+1;
-              compressVideo(files[i].path,c);
+          c=c+1;
+          compressVideo(files[i].path,c);
         }
       }
       //final dd = files[0].path;
@@ -229,10 +229,10 @@ class Imagepicker {
    //  return dd;
    // }
 
+
   Future<Uint8List?> compressImage(File file) async {
     var result = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-
       quality: 20,
      // rotate: 90,
     );

@@ -243,14 +243,14 @@ class _indivisualState extends State<indivisual>
                   "last seen at " + widget.chatModel.time,
                   style: TextStyle(fontSize: 15, color: Colors.white60),
                 ),
-                ElevatedButton(
+               /* ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (context) => ZoomButton()));
                     },
-                    child: Text("NEXT"))
+                    child: Text("NEXT"))*/
               ],
             ),
           ),
@@ -397,7 +397,7 @@ class _indivisualState extends State<indivisual>
                                       size: 25,
                                     ),
                                     onPressed: () {
-                                      runCamera();
+                                     runCamera();
                                     },
                                   ),
                                 ],
